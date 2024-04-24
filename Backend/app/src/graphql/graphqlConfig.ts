@@ -1,5 +1,4 @@
-
-import { ApolloServer } from "apollo-server-express";
+import { ApolloServer, AuthenticationError } from "apollo-server-express";
 import * as path from "path";
 import { buildSchema } from "type-graphql";
 import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
@@ -10,16 +9,44 @@ import {
 } from "./errorHandlings";
 import { AgentResolver } from "../controllers/resolvers/agentResolver";
 import { EmployeeResolver } from "../controllers/resolvers/employeeResolver";
+import { shield } from "graphql-shield";
+import { isAdmin, isAuthenticated } from "../authorization/authChecker";
+import { RedisConnector } from "../redis/RedisConnector";
+import { applyMiddleware } from "graphql-middleware";
 
+const agentResolver = new AgentResolver();
 export async function getGraphQLServer() {
   const schema = await buildSchema({
-    resolvers: [AgentResolver,EmployeeResolver],
+    resolvers: [AgentResolver, EmployeeResolver],
     emitSchemaFile: path.resolve(__dirname, "./../generated", "schema.gql"),
     validate: { forbidUnknownValues: false },
   });
 
+  const permissions = shield(
+    {
+      Query: {
+        getAgentDetails: isAdmin,
+      },
+      Mutation: {
+        createAgent: isAdmin,
+        createEmployee:isAdmin
+      },
+    },
+    {
+      allowExternalErrors: true,
+      debug:
+        (await RedisConnector.getInstance().getKey("GRAPHQL_DEBUG")) == "true",
+      fallbackError: new AuthenticationError("Forbidden Request"),
+    }
+  );
+
+  const schemaWithPermissions: any = applyMiddleware(
+    schema,
+    permissions
+  ) as any;
+
   const server = new ApolloServer({
-    schema: schema,
+    schema: schemaWithPermissions,
     plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
     introspection: true,
     cache: "bounded",
@@ -30,7 +57,7 @@ export async function getGraphQLServer() {
     }),
     context: ({ req, res }) => {
       let requestId = generateUniqueRequestId(req);
-      const startTime :any= new Date();
+      const startTime: any = new Date();
 
       // Extract token from the authorization header
       const token = req?.headers?.authorization;
@@ -44,7 +71,7 @@ export async function getGraphQLServer() {
 
       // Function to log the response time
       const logResponseTime = () => {
-        const endTime:any = new Date();
+        const endTime: any = new Date();
         const elapsedTime = ((endTime - startTime) / 1000).toFixed(2);
         console.log(`Response time: ${elapsedTime} seconds`);
       };

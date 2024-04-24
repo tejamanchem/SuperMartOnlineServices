@@ -18,17 +18,17 @@ export class AgentResolver {
     }
   }
 
+
+  
   @Mutation((returns) => AgentType)
   public async createAgent(
     @Ctx() { requestId }: any,
     @Arg("input") input: AgentInput
   ): Promise<any> {
     try {
-
       const newUser = new Agent({
-        agentEmployeeId: input.agentEmployeeId,
-        agentName: input.agentName,
-        agentPrimaryNumber: input.agentPrimaryNumber,
+        agentId: input.agentId,
+        agentDetails: input.agentDetails
       });
      let response =  await newUser.save();
       return response
@@ -38,8 +38,6 @@ export class AgentResolver {
       //   agentPrimaryNumber: newUser.agentPrimaryNumber,
       // };
     } catch (error: any) {
-
-      console.log('fffffffffffffffffffffffffffffffffffffffffffff',error)
       throw error;
     }
   }
