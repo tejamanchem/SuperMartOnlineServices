@@ -1,15 +1,13 @@
 import { Field, InputType, Int } from "type-graphql";
+import { EmployeeInput } from "./employeeInput";
 
 @InputType()
 class AgentInput implements Partial<any> {
   @Field()
-  public agentName: string;
+  public agentId: string;
 
   @Field()
-  public agentEmployeeId: string;
-
-  @Field()
-  public agentPrimaryNumber: string;
+  public agentDetails: string;
 }
 
 
