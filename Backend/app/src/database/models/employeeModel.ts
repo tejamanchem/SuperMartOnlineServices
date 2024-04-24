@@ -48,7 +48,9 @@ const employeeSchema = new Schema({
   profilePicture: {
     type: String,
   },
-
+  password: {
+    type: String,
+  },
   createdAt: { type: Date, default: Date.now() },
 });
 export const Employee = mongoose.model("Employee", employeeSchema);
