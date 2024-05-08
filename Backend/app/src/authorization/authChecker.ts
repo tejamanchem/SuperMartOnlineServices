@@ -61,27 +61,28 @@ const isAuthenticated = rule({ cache: "strict" })(
       );
       return true;
     }
-    if (process.env.TYPE_OF_AUTHENTICATION == "token") {
-      let token = context.req.headers.authorization
-        ? context.req.headers.authorization.replace("Bearer", "").trim()
-        : null;
-      if (!token) {
-        throw new AuthenticationError(
-          "Access denied! You need to be authorized to perform this action!"
-        );
-      }
+    // if (process.env.TYPE_OF_AUTHENTICATION == "token") {
+    //   let token = context.req.headers.authorization
+    //     ? context.req.headers.authorization
+    //     : null;
+    //   if (!token) {
+    //     throw new AuthenticationError(
+    //       "Access denied! You need to be authorized to perform this action!"
+    //     );
+    //   }
 
-      let tokenResponse: any = { error: false };
-      if (tokenResponse.error) {
-        log.error(
-          "customAuthChecker-isAuthenticated : Invalid Authentication Token Recieved"
-        );
-        throw new AuthenticationError(
-          "Access denied! You need to be authorized to perform this action!"
-        );
-      }
-      return true;
-    } else if (process.env.TYPE_OF_AUTHENTICATION == "key") {
+    //   let tokenResponse: any = { error: false };
+    //   if (tokenResponse.error) {
+    //     log.error(
+    //       "customAuthChecker-isAuthenticated : Invalid Authentication Token Recieved"
+    //     );
+    //     throw new AuthenticationError(
+    //       "Access denied! You need to be authorized to perform this action!"
+    //     );
+    //   }
+    //   return true;
+    // } 
+    if (process.env.TYPE_OF_AUTHENTICATION == "key") {
       if (
         context.req.headers["approvalkey"] &&
         process.env.APPROVAL_KEY == context.req.headers["approvalkey"]
@@ -131,7 +132,6 @@ const isAdmin = rule({ cache: "contextual" })(
         );
       }
       const decoded = jwt.verify(secondToken, process.env.JWT_SECRECT_KEY);
-      console.log("decoded ", decoded);
       if (!decoded) {
         log.error(
           `customAuthChecker-isAdmin : Invalid Authentication Token Recieved`

@@ -6,7 +6,7 @@ import { AgentInput } from "../inputs/agentInput";
 
 @Resolver()
 @Service()
-export class AgentResolver {
+export default class AgentResolver {
   constructor() {}
 
   @Query((returns) => [AgentType])
@@ -18,8 +18,6 @@ export class AgentResolver {
     }
   }
 
-
-  
   @Mutation((returns) => AgentType)
   public async createAgent(
     @Ctx() { requestId }: any,
@@ -28,15 +26,10 @@ export class AgentResolver {
     try {
       const newUser = new Agent({
         agentId: input.agentId,
-        agentDetails: input.agentDetails
+        agentDetails: input.agentDetails,
       });
-     let response =  await newUser.save();
-      return response
-      // return {
-      //   agentEmployeeId: newUser.agentEmployeeId,
-      //   agentName: newUser.agentName,
-      //   agentPrimaryNumber: newUser.agentPrimaryNumber,
-      // };
+      let response = await newUser.save();
+      return response;
     } catch (error: any) {
       throw error;
     }

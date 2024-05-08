@@ -7,17 +7,42 @@ import {
   getErrorCode,
   getErrorMessage,
 } from "./errorHandlings";
-import { AgentResolver } from "../controllers/resolvers/agentResolver";
-import { EmployeeResolver } from "../controllers/resolvers/employeeResolver";
 import { shield } from "graphql-shield";
 import { isAdmin, isAuthenticated } from "../authorization/authChecker";
 import { RedisConnector } from "../redis/RedisConnector";
 import { applyMiddleware } from "graphql-middleware";
+import glob from "glob";
 
-const agentResolver = new AgentResolver();
+async function getResolvers() {
+  const resolverFilesPattern = path.join(
+    process.cwd(),
+    "./src/controllers/resolvers/*Resolver.ts"
+  );
+
+  // Use glob to find all resolver files
+  const resolverFiles = await new Promise<string[]>((resolve, reject) => {
+    glob(resolverFilesPattern, (err, files) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(files);
+      }
+    });
+  });
+
+  // Import resolver modules
+  const resolvers = await Promise.all(
+    resolverFiles.map(async (file) => {
+      const module = await import(file);
+      return module.default;
+    })
+  );
+
+  return resolvers;
+}
 export async function getGraphQLServer() {
   const schema = await buildSchema({
-    resolvers: [AgentResolver, EmployeeResolver],
+    resolvers:await getResolvers() as any,
     emitSchemaFile: path.resolve(__dirname, "./../generated", "schema.gql"),
     validate: { forbidUnknownValues: false },
   });
@@ -26,10 +51,17 @@ export async function getGraphQLServer() {
     {
       Query: {
         getAgentDetails: isAdmin,
+        getEmployeeDetails: isAuthenticated,
+        getAllCustomers: isAdmin,
+        getAllProducts: isAuthenticated,
+        getProductById: isAuthenticated,
       },
       Mutation: {
         createAgent: isAdmin,
-        createEmployee:isAdmin
+        createEmployee: isAdmin,
+        deleteProduct: isAdmin,
+        updateProduct: isAdmin,
+        createProduct: isAdmin,
       },
     },
     {
